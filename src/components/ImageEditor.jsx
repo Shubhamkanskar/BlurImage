@@ -8,7 +8,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Undo, Redo, RotateCcw, ZoomIn, ZoomOut, Maximize } from "lucide-react";
+import {
+  Undo,
+  Redo,
+  RotateCcw,
+  ZoomIn,
+  ZoomOut,
+  Maximize,
+  X,
+  Trash2,
+} from "lucide-react";
 
 const ImageEditor = () => {
   const [imgSrc, setImgSrc] = useState("");
@@ -166,9 +175,7 @@ const ImageEditor = () => {
     };
     const newBlurAreas = [...blurAreas, newArea];
     setBlurAreas(newBlurAreas);
-    const newHistory = history.slice(0, historyIndex + 1);
-    setHistory([...newHistory, newBlurAreas]);
-    setHistoryIndex(newHistory.length);
+    updateHistory(newBlurAreas);
     redrawCanvas();
   };
 
@@ -179,7 +186,14 @@ const ImageEditor = () => {
       blurAmount: value[0],
     }));
     setBlurAreas(updatedAreas);
+    updateHistory(updatedAreas);
     redrawCanvas();
+  };
+
+  const updateHistory = (newBlurAreas) => {
+    const newHistory = history.slice(0, historyIndex + 1);
+    setHistory([...newHistory, newBlurAreas]);
+    setHistoryIndex(newHistory.length);
   };
 
   const undo = () => {
@@ -230,6 +244,22 @@ const ImageEditor = () => {
     setZoom(1);
   };
 
+  const removeBlurArea = (index) => {
+    const newBlurAreas = blurAreas.filter((_, i) => i !== index);
+    setBlurAreas(newBlurAreas);
+    updateHistory(newBlurAreas);
+    redrawCanvas();
+  };
+
+  const unselectImage = () => {
+    setImgSrc("");
+    setBlurAreas([]);
+    setHistory([]);
+    setHistoryIndex(-1);
+    setIsCanvasReady(false);
+    setZoom(1);
+  };
+
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 flex items-center justify-center p-4">
@@ -276,13 +306,26 @@ const ImageEditor = () => {
               </Tooltip>
             </div>
           </div>
-          <div className="mb-6">
+          <div className="mb-6 flex items-center space-x-2">
             <Input
               type="file"
               accept="image/*"
               onChange={onSelectFile}
               className="w-full bg-gray-700 text-gray-100 border-gray-600"
             />
+            {imgSrc && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={unselectImage}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Unselect Image</TooltipContent>
+              </Tooltip>
+            )}
           </div>
           {imgSrc && (
             <div>
@@ -348,6 +391,32 @@ const ImageEditor = () => {
                   onValueChange={handleBlurChange}
                   className="w-full"
                 />
+              </div>
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-gray-100 mb-2">
+                  Blur Areas
+                </h2>
+                <ul className="space-y-2">
+                  {blurAreas.map((area, index) => (
+                    <li
+                      key={index}
+                      className="flex items-center justify-between bg-gray-700 p-2 rounded"
+                    >
+                      <span className="text-gray-300">
+                        Area {index + 1}: ({area.x.toFixed(0)},{" "}
+                        {area.y.toFixed(0)}) - {area.width.toFixed(0)}x
+                        {area.height.toFixed(0)}
+                      </span>
+                      <Button
+                        onClick={() => removeBlurArea(index)}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                        size="sm"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
               </div>
               <div className="flex justify-center space-x-4">
                 <Button
